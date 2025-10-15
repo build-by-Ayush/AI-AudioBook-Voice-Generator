@@ -1,0 +1,33 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv/
+.myenv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# Runtime outputs
+data/Outputs/*
+!data/Outputs/.gitkeep
+data/tmp/*
+!data/tmp/.gitkeep
+static/audio_*.wav
+
+# Training outputs
+model_output/
+checkpoints/
+*.pth
+
+# OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Keep empty folders
+!.gitkeep

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audiobook Generator</title>
+    
+    <!-- Force consistent viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    
+    <style>
+        /* Reset and prevent overflow */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            overflow-x: hidden;
+            max-width: 100vw;
+            width: 100%;
+        }
+        
+        body {
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to top, #1059b9, rgba(16, 89, 185, 0) 50%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Header section */
+        .header {
+            display: flex;
+            align-items: center;
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            z-index: 3;
+        }
+
+        /* Logo styling */
+        .logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        /* Heading style */
+        h1 {
+            font-weight: bold;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 32px;
+            color: #1059b9;
+            margin: 0;
+        }
+
+        /* Wave Design */
+        .wave-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        /* Left side background */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 20%;
+            height: 100%;
+            background-image: url('/static/photo1.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 1;
+            max-width: 300px;
+        }
+
+        /* Right side background */
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20%;
+            height: 100%;
+            background-image: url('/static/photo1.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 1;
+            max-width: 300px;
+        }
+
+        /* Content container */
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 180px;
+            text-align: center;
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        /* Paragraph above text box */
+        .description {
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            color: #000000;
+            margin: 20px;
+            max-width: 800px;
+        }
+
+        /* Text Box */
+        textarea {
+            width: 70%;
+            max-width: 700px;
+            height: 120px;
+            border-radius: 15px;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #1059b9;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+            outline: none;
+            resize: none;
+        }
+
+        #convertButton {
+            background: linear-gradient(to right, #4CAF50, #2E8B57);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #convertButton:hover {
+            background: linear-gradient(to right, #2E8B57, #4CAF50);
+            transform: scale(1.05);
+        }
+
+        /* Small Additional Wave */
+        .small-wave-container {
+            position: absolute;
+            top: -5px;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            z-index: 3;
+        }
+
+        /* Voice Selection Container */
+        .voice-selection {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 50px;
+            margin-bottom: 20px;  /* Reduced to make room for upload status */
+            flex-wrap: wrap;
+        }
+
+        /* Voice Button Styling (shared for all three) */
+        .voice-button, .upload-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 90px;
+            height: 90px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: 0.3s;
+            position: relative;
+        }
+
+        /* Voice Button Image (shared) */
+        .voice-button img, .upload-button img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* Glowing Effect when Selected (shared) */
+        .voice-button.selected, .upload-button.selected {
+            box-shadow: 0 0 15px 5px #c7f489;
+            transform: translateY(-3px);
+        }
+
+        /* Hover effect (shared) */
+        .voice-button:hover, .upload-button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Voice Button Text (shared) - positioned BELOW circle */
+        .voice-button p, .upload-button p {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0;
+            font-weight: bold;
+            font-size: 16px;
+            color: #ffffff;
+            text-shadow: 1px 1px 2px #000000;
+            white-space: nowrap;
+        }
+
+        /* Hidden file input */
+        #customVoiceUpload {
+            display: none;
+        }
+
+        /* 🔧 IMPROVED Upload status indicator - more visible */
+        .upload-status {
+            min-height: 30px;  /* Reserve space */
+            margin-top: 15px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .upload-status.uploading {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+
+        .upload-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .upload-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+
+        /* Convert Button Container */
+        .convert-container {
+            margin-bottom: 10px;
+        }
+
+        /* Audio Player */
+        #audioPlayer {
+            margin-top: 10px;
+            max-width: 90%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Small Additional Wave -->
+    <div class="small-wave-container">
+        <svg viewBox="0 0 1440 200" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#a3e06e" fill-opacity="0.8" d="M0,120L60,136C120,152,240,184,360,168C480,152,600,96,720,80C840,64,960,96,1080,106.7C1200,117,1320,107,1380,90L1440,80V0H0Z"></path>
+        </svg>
+    </div>
+
+    <!-- Wave SVG -->
+    <div class="wave-container">
+        <svg viewBox="0 0 1440 250" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#c7f489" fill-opacity="1" d="M0,140L48,156C96,172,192,204,288,188C384,172,480,108,576,92C672,76,768,108,864,118.7C960,129,1056,119,1152,102.7C1248,87,1344,65,1392,54.7L1440,44V0H0Z"></path>
+        </svg>
+    </div>
+
+    <!-- Header with Logo and Title -->
+    <div class="header">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="logo"> 
+        <h1>Text-to-Audiobook Converter</h1><br>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <p class="description">"Transform your text into lifelike speech with our Audiobook Generator! 
+            Simply enter your text, and our AI-powered tool will convert it into natural-sounding audio. Whether 
+            you want to listen to books, articles, or notes, this tool makes it easy and convenient. Try it now 
+            and bring your words to life!"</p>
+        
+        <textarea id="textInput" placeholder="Enter your text here..."></textarea><br>
+        
+        <!-- Voice Selection Buttons -->
+        <div class="voice-selection">
+            <div class="voice-button" id="vits" onclick="selectVoice('vits')">
+                <img src="/static/vits1.jpg" alt="VITS">
+                <p>VITS</p>
+            </div>
+
+            <div class="voice-button" id="xtts" onclick="selectVoice('xtts')">
+                <img src="/static/xtts_cloned.png" alt="XTTS">
+                <p>TM</p>
+            </div>
+
+            <!-- 🆕 Custom Upload Button -->
+            <div class="upload-button" id="custom" onclick="triggerUpload()">
+                <img src="/static/upload_photo.jpg" alt="Custom Upload">
+                <p>Custom</p>
+            </div>
+        </div>
+        
+        <!-- 🔧 FIXED: More audio formats + better accept attribute -->
+        <input type="file" id="customVoiceUpload" 
+               accept="audio/*,.wav,.mp3,.m4a,.flac,.ogg,.aac,.wma" 
+               onchange="handleFileUpload(event)">
+        
+        <!-- 🔧 IMPROVED: More visible upload status with styling -->
+        <div id="uploadStatus" class="upload-status"></div>
+
+        <!-- Convert Button (separate row) -->
+        <div class="convert-container">
+            <button id="convertButton" onclick="convertText()">Convert to Speech</button>
+        </div>
+
+        <!-- Audio Player (pushed down) -->
+        <audio id="audioPlayer" controls></audio>
+    </div>
+
+    <script>
+        let selectedVoice = null;
+        let uploadedFileName = null;
+
+        function selectVoice(voice) {
+            console.log('Selecting voice:', voice);  // Debug log
+            
+            // Remove 'selected' class from all buttons
+            document.getElementById('vits').classList.remove('selected');
+            document.getElementById('xtts').classList.remove('selected');
+            document.getElementById('custom').classList.remove('selected');
+
+            // Add 'selected' class to the chosen button
+            document.getElementById(voice).classList.add('selected');
+
+            // Store the selected voice
+            selectedVoice = voice;
+            
+            console.log('Voice selected:', selectedVoice);  // Debug log
+            
+            // Clear upload status if switching away from custom
+            if (voice !== 'custom') {
+                const statusDiv = document.getElementById('uploadStatus');
+                statusDiv.innerText = '';
+                statusDiv.className = 'upload-status';  // Reset class
+                uploadedFileName = null;
+            }
+        }
+
+        function triggerUpload() {
+            console.log('Upload triggered');  // Debug log
+            // Trigger file input click
+            document.getElementById('customVoiceUpload').click();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            const statusDiv = document.getElementById('uploadStatus');
+            
+            console.log('File selected:', file);  // Debug log
+            
+            if (!file) {
+                return;
+            }
+
+            // Show uploading status with styling
+            statusDiv.innerText = '⏳ Uploading ' + file.name + '...';
+            statusDiv.className = 'upload-status uploading';
+
+            // Create FormData to upload file
+            const formData = new FormData();
+            formData.append('voice_file', file);
+
+            fetch('/upload_voice', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Upload response:', data);  // Debug log
+                
+                if (data.error) {
+                    statusDiv.innerText = '❌ Upload error: ' + data.error;
+                    statusDiv.className = 'upload-status error';
+                    alert('Upload error: ' + data.error);
+                } else {
+                    uploadedFileName = data.filename;
+                    statusDiv.innerText = '✅ ' + file.name + ' uploaded successfully!';
+                    statusDiv.className = 'upload-status success';
+                    
+                    console.log('Upload successful, filename:', uploadedFileName);  // Debug log
+                    
+                    // 🔧 CRITICAL FIX: Select custom voice AND ensure it's visible
+                    selectVoice('custom');
+                    
+                    // Double-check selection worked
+                    setTimeout(() => {
+                        if (selectedVoice === 'custom') {
+                            console.log('Custom voice selected successfully');
+                        } else {
+                            console.error('Voice selection failed!');
+                        }
+                    }, 100);
+                }
+            })
+            .catch(error => {
+                console.error('Upload error:', error);
+                statusDiv.innerText = '❌ Failed to upload: ' + error.message;
+                statusDiv.className = 'upload-status error';
+                alert('Failed to upload file: ' + error.message);
+            });
+        }
+
+        function convertText() {
+            let text = document.getElementById("textInput").value;
+            let button = document.getElementById("convertButton");
+            let audioPlayer = document.getElementById("audioPlayer");
+
+            console.log('Convert clicked. Selected voice:', selectedVoice);  // Debug log
+            console.log('Uploaded filename:', uploadedFileName);  // Debug log
+
+            // Check if a voice is selected
+            if (!selectedVoice) {
+                alert("Please select a voice before converting.");
+                return;
+            }
+
+            // Check if custom voice is selected but no file uploaded
+            if (selectedVoice === 'custom' && !uploadedFileName) {
+                alert("Please upload a voice sample first by clicking the Custom button.");
+                return;
+            }
+
+            // Check if text is entered
+            if (!text.trim()) {
+                alert("Please enter some text to convert.");
+                return;
+            }
+
+            // Show loading text while processing
+            button.innerText = "Converting...";
+            button.disabled = true;
+
+            console.log('Sending request with:', { text: text.substring(0, 50) + '...', voice: selectedVoice, custom_voice_file: uploadedFileName });
+
+            fetch("/synthesize", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    text: text, 
+                    voice: selectedVoice,
+                    custom_voice_file: uploadedFileName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Synthesis response:', data);  // Debug log
+                
+                if (data.error) {
+                    alert("Error: " + data.error);
+                } else {
+                    audioPlayer.src = "/" + data.file;
+                    audioPlayer.play();
+                }
+                button.innerText = "Convert to Speech";
+                button.disabled = false;
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An error occurred during conversion: " + error.message);
+                button.innerText = "Convert to Speech";
+                button.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
